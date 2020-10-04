@@ -17,8 +17,7 @@ supports 14 and 16 pin I.C.s and the switch is manual.
 Only the logic behaviour is tested, not wether the I.C. conforms to TTL or CMOS 
 specifications.
 
-<p align="center"><img src="firstPrototype.jpg" 
- alt="Arduino Uno with chea shield and miniature experimenter board, complete with test I.C; 74LS02">
+![Arduino Uno with cheap shield and miniature experimenter board, complete with test I.C.; a working 74LS02](firstPrototype.jpg)
 
 ## Configuration
 
@@ -43,6 +42,7 @@ expressions; ! = NOT, | is OR, & is AND and ^ as XOR.
 supported the response is "OK". If not the response is "**ERROR**".
 
 Example: 
+
     C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V
 
 * **Q:&lt;set-and-query&gt;** - specifies the values for the I.C. input pins. The 
@@ -50,6 +50,7 @@ response is modified copy;the first char is '**R**' and the I.C. output pin valu
 are filled in.
 
 Example: 
+
     Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V
 
 * **R** - reset all pins to tri-state and erase configuration.
@@ -61,7 +62,8 @@ Example:
 * **R:&lt;query_result&gt;** similar to the **Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V**
 but with output pin levels filled in.
 
-Example: 
+Example:
+ 
     R:0,0,1,1,0,0,G,0,0,1,0,0,1,V
 
 ## Process
@@ -73,6 +75,8 @@ expressions in the 'M? sections.
 
 The response of the Arduino is compared with this expected response and 
 differences are flagged. On completion the number of errors is reported. Default 
-the script is quite chatty, so you can see what it does. Even more prints are 
+the script is quite chatty, so you can see what it does. Even more print's are 
 commented out, very handy for debugging. The Arduino sketch cost me one day, the 
-Python script two, almost debugging each induvidual line with print()s.
+Python script two, almost debugging each individual line with print()'s.
+
+Also see the [ToDo](ToDo.txt) for what isn't there yet.
