@@ -17,7 +17,8 @@ supports 14 and 16 pin I.C.s and the switch is manual.
 Only the logic behaviour is tested, not wether the I.C. conforms to TTL or CMOS 
 specifications.
 
-<p align="center"><img src="all_tof.png" alt="patch with all tof objects and abstractions">
+<p align="center"><img src="firstPrototype.jpg" 
+ alt="Arduino Uno with chea shield and miniature experimenter board, complete with test I.C; 74LS02">
 
 ## Configuration
 
