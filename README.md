@@ -1,13 +1,16 @@
 # logicTester
 
-This is a POC (proof-of-concept) of a simple but configurable 'SSI'-logic I.C-tester,
+This is a POC (proof-of-concept) of a simple but configurable 'SSI'-logic I.C-tester.
 
-The idea is to split the low-level measuring tasks from the hight-level data 
-generation and comparison tasks. The low-level functionality is implemented in
-an Arduino sketch which communicates with the high-level functionality build in
-Python. The Python script does contain the I.C. data, this is read from a text-
-based configuration file. As long as the behaviour at the output pins can be defined
-in Boolean logic, the chip can be tested. 
+Unlike some other testers, you have to specify which I.C. you have and the script
+reports proper working or a failure. 
+
+This tester splits the low-level measuring tasks from the high-level data 
+library, test data generation and comparison tasks. The low-level functionality 
+is implemented in an Arduino sketch which communicates with the high-level control 
+and compare functionality build in Python. The Python script does contain the I.C. 
+data, this is read from a text-based configuration file. As long as the behaviour 
+at the output pins can be defined in Boolean logic, the chip can be tested. 
 
 The current version is limited to stateless gates and inverters. So far I didn't 
 try to define a machine-parsable notation for I.C.s with clocked or register
@@ -21,7 +24,7 @@ specifications.
 
 ## Configuration
 
-The configuration file is currently implemented as json, but omitting the outer braces.
+The configuration file format is currently implemented as json, but omitting the outer braces.
 
     "type": "7402", "pins": 14, "config": "C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V",  "M1": "!(2|3)", "M4": "!(5|6)", "M10": "!(8|9)",  "M13":  "!(11|12)"
 
@@ -33,13 +36,27 @@ The M? sections relate to the I.C output pins and contain a Boolean-expression
 defining the output in terms of input lines and characters defining logical
 expressions; ! = NOT, | is OR, & is AND and ^ as XOR.
 
+## Usage
+
+The Python script is written with Python 3.6.9 on Linux Xubuntu 18.04.
+
+The script is started with ***python3 &lt;port&gt; &lt;chip&gt;***
+
+***port*** the the serial port, Baud rate is 9600 Bd.
+
+***chip*** is the chip to test. Currently only the 74(LS)00 and 74(LS)02 are 
+completely implemented.
+
+Example:
+
+    python3 icTest.py /dev/ttyUSB1 7402
 
 ## Message format
 
 ### To Arduino:
 
 * **C:&lt;pin-spec&gt;** - configure the pins on the Arduino. If the pin-numbering is
-supported the response is "OK". If not the response is "**ERROR**".
+supported the response is "**OK**". If not the response is "**ERROR**".
 
 Example: 
 
