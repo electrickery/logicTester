@@ -16,3 +16,38 @@ supports 14 and 16 pin I.C.s and the switch is manual.
 
 Only the logic behaviour is tested, not wether the I.C. conforms to TTL or CMOS 
 specifications.
+
+<p align="center"><img src="all_tof.png" alt="patch with all tof objects and abstractions">
+
+## Configuration
+
+The configuration file is currently implemented as json, but omitting the outer braces.
+
+   "type": "7402", "pins": 14, "config": "C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V",  "M1": "!(2|3)", "M4": "!(5|6)", "M10": "!(8|9)",  "M13":  "!(11|12)"
+
+
+## Message format
+
+To Arduino:
+
+* **C:&lt;pin-spec&gt;** - configure the pins on the Arduino. If the pin-numbering is
+supported the response is "OK". If not the response is "**ERROR**".
+
+Example: C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V
+
+* **Q:&lt;set-and-query&gt;** - specifies the values for the I.C. input pins. The 
+response is modified copy;the first char is '**R**' and the I.C. output pin values 
+are filled in.
+
+Example: Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V
+
+* **R** - reset all pins to tri-state and erase configuration.
+
+From Arduino:
+
+* OK - response to **C:&lt;pin-spec&gt;** and **R**
+
+* **R:&lt;query_result&gt;** similar to the **Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V**
+but with output pin levels filled in.
+
+Example: R:0,0,1,1,0,0,G,0,0,1,0,0,1,V
