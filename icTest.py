@@ -6,16 +6,23 @@ import serial
 import time
 import re
 import json 
+
+VERSION = "1.1"
     
 ttyPort = ""
 icType = ""
 libraryName = 'icLibrary.txt'
 
 arduinoWait = 2
+DEBUG = False
+
+def log(message):
+    if (DEBUG):
+        print(message)
 
 def writeSerial(port, message):
     port.write (str.encode(message + "\r\n"))
-    time.sleep(arduinoWait)
+#    time.sleep(arduinoWait)
 
 def readlnSerial(port):
     return str(ser.readline().decode("utf-8"))
@@ -88,6 +95,7 @@ def query2result(query, pattern, queryPinList, icConf):
         pinDefMod = pinDef
         epIndex = 0
         for ep in exercisePinList:
+#            print("pinDefMod: " + pinDefMod)
             pinDefMod = re.sub(r'!(\d+)', r'not(\1)', pinDefMod)
             pinDefMod = re.sub(r'(\d+)', r'%\1%', pinDefMod)
             pinDefMod = re.sub(r'[%]+', r'%', pinDefMod)
@@ -103,7 +111,8 @@ def query2result(query, pattern, queryPinList, icConf):
             epIndex += 1
 #        if eval(pinDefMod):
             
-#        print(" pinDefMod: " + pinDefMod + "  " + str(eval(pinDefMod)))
+#        print(" pinDefMod: " + pinDefMod + "  ", end = '')
+#        print(str(eval(pinDefMod)))
         if eval(pinDefMod):
             expectVal = '1'
         else:
@@ -119,7 +128,8 @@ if len(sys.argv) > 1:
     ttyPort = sys.argv[1]
 if len(sys.argv) > 2:
     icType = sys.argv[2]
-    
+  
+print ("I.C. tester version: " + VERSION)
 print ("ttyPort: " + ttyPort)
 print ("IC: " + icType)
 
@@ -130,13 +140,13 @@ if (not(icConf)):
     exit()
 
 ser = serial.Serial(ttyPort, 9600, timeout=2)  # open serial port
-print("> " + readlnSerial(ser), end='')
+log("> " + readlnSerial(ser).strip())
 
 # Send IC configuration to Arduino
 configStr = icConf.get("config")
-print("< " + configStr)
+log("< " + configStr)
 writeSerial(ser, configStr)
-print("> " + readlnSerial(ser), end='')
+log("> " + readlnSerial(ser).strip())
 
 
 # Exercise loop init
@@ -146,6 +156,10 @@ exercisePinCount = len(exercisePinList)
 queryPinList = findQueryPins(configStr)
 queryPinCount = len(queryPinList)
 #print("Querying " + str(queryPinCount) + " " + str(queryPinList))
+pinInventory = exercisePinCount + queryPinCount + 2
+if pinInventory != icConf.get("pins"):
+    print ("ERROR: mismatch between specified pins: " + str(icConf.get("pins")) + " and found pins: " + str(pinInventory))
+    exit(1)
 
 configStrMod = re.sub(r'(\d+)', r'%\1%', configStr)
 queryStrTempl = re.sub(r'[Qq]', '-', configStrMod)
@@ -154,7 +168,7 @@ queryStrTempl = re.sub('C:', 'Q:', queryStrTempl)
 #print("  c: " + configStrMod + "  q: " + queryStrTempl)
 
 exerciseCount = pow(2, exercisePinCount)
-exerciseCount = 3
+#exerciseCount = 3
 
 #print(" exe-pins: " + str(exercisePinCount) + " , exercise count: " + str(exerciseCount))
 
@@ -165,30 +179,32 @@ for value in range (exerciseCount):
     pattern = int2bits(value, exercisePinCount)
     queryStr = template2query(pattern, queryStrTempl, exercisePinList)
     
-    print("< " + queryStr)
+    log("< " + queryStr)
     writeSerial(ser, (queryStr))
 
     actualResult   = readlnSerial(ser).strip()
     expectedResult = query2result(queryStr, pattern, queryPinList, icConf)
 
-    print("> " + actualResult)
+    log("> " + actualResult)
 
     if (actualResult == expectedResult):
-        print (actualResult + " Ok")
+        print (str(value + 1) + "/" + str(exerciseCount) + " " + actualResult + " Ok")
     else:
-        print("Err '" + actualResult   + "' actual")
-        print("Err '" + expectedResult + "' expected")
+        print("Err[" + str(errorCount) + "] '" + actualResult   + "' actual")
+        print("Err[" + str(errorCount) + "] '" + expectedResult + "' expected")
         errorCount += 1
 
 resetStr = "R"
 
-print("< " + resetStr)
+log("< " + resetStr)
 writeSerial(ser, resetStr)
 
-print("> " + readlnSerial(ser), end='')
+log("> " + readlnSerial(ser).strip())
 
 if errorCount:
     print("testing " + icType + "; " + str(errorCount) + " errors")
+else:
+    print("testing " + icType + " OK.")
 
 # generate a bit pattern for all the exercise pins
 # fill the query-template with the exercise logic levels
