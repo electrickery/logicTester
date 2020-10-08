@@ -19,6 +19,7 @@
 #include "pinMap.h"
 
 #define DEBUG 0
+#define BAUDRATE 115200
 
 #define SERIALBUFSIZE         50
 char serialBuffer[SERIALBUFSIZE];
@@ -26,19 +27,23 @@ byte setBufPointer = 0;
 
 #define PIN_SEPARATOR   ','
 #define EXERCISE_PIN    'E'
+#define CLOCK_PIN       'C'
+#define INV_CLOCK_PIN   'c'
 #define QUERY_PIN       'Q'
 #define GROUND_PIN      'G'
 #define POWER_PIN       'V'
 #define QUERY_CHAR      '-'
 
+#define CLOCK_PULSE     1L
+
 byte pinType[MAX_PINCOUNT];
 byte pinCount = 0;
 
 void setup() {
-  Serial.begin(9600);  
+  Serial.begin(BAUDRATE);  
   clearPins();
   delay(10);
-  Serial.println("ICtest1.0");
+  Serial.println("ICtest1.2");
 }
 
 void loop() {
@@ -125,6 +130,12 @@ void configurePins() {
       // ignore
     } else if (pinType[i] == POWER_PIN) {
       // ignore
+    } else if (pinType[i] == CLOCK_PIN) { // raising flank clock
+      pinMode(pinMap[i], OUTPUT);
+      digitalWrite(pinMap[i], LOW);
+    } else if (pinType[i] == INV_CLOCK_PIN) { // falling flank clock
+      pinMode(pinMap[i], OUTPUT);
+      digitalWrite(pinMap[i], HIGH);
     } else {
       Serial.print("ERROR: config ");
       Serial.print(i);
@@ -174,7 +185,7 @@ byte getPinDef() {
     separatorIndex = parseStr.indexOf(PIN_SEPARATOR);
     if (isNumeric(parseStr.charAt(0))) {
         pinType[i] = EXERCISE_PIN;
-    } else {
+    } else { 
         pinType[i] = parseStr.charAt(0);
     }
     parseStr = parseStr.substring(separatorIndex + 1);
@@ -200,15 +211,32 @@ void setQueryThePins() { // Q:0,0,-,0,0,-,G,-,0,0,-,0,0,V
     return;
   }
   byte separatorIndex = 0;
-  char *parseBuf = &serialBuffer[2];
+  char *parseBuf = &serialBuffer[2]; // remove leading 'Q:'
   String parseStr = parseBuf;
 
-  for (int i = 0; i < pinCount; i++) { // setting
+  for (int i = 0; i < pinCount; i++) { // setting non-clock pins
     separatorIndex = parseStr.indexOf(PIN_SEPARATOR);
-    if (parseStr.charAt(0) == '0' && pinMap[i] != 0) {
-        digitalWrite(pinMap[i], 0);
-    } else if (parseStr.charAt(0) == '1' && pinMap[i] != 0) {
-        digitalWrite(pinMap[i], 1);
+    if (pinType[i] != CLOCK_PIN && pinType[i] != INV_CLOCK_PIN) {
+      if (parseStr.charAt(0) == '0' && pinMap[i] != 0) {
+          digitalWrite(pinMap[i], 0);
+      } else if (parseStr.charAt(0) == '1' && pinMap[i] != 0) {
+          digitalWrite(pinMap[i], 1);
+      } else { // ignore other pins
+          
+      }
+      parseStr = parseStr.substring(separatorIndex + 1);
+    }
+  }
+  for (int i = 0; i < pinCount; i++) { // setting clock pins
+    separatorIndex = parseStr.indexOf(PIN_SEPARATOR);
+    if (pinType[i] == CLOCK_PIN && parseStr.charAt(0) == '1' && pinMap[i] != 0) {
+        digitalWrite(pinMap[i], HIGH);
+        delay(CLOCK_PULSE);
+        digitalWrite(pinMap[i], LOW);
+    } else if (pinType[i] == INV_CLOCK_PIN && parseStr.charAt(0) == '1' && pinMap[i] != 0) {
+        digitalWrite(pinMap[i], LOW);
+        delay(CLOCK_PULSE);
+        digitalWrite(pinMap[i], HIGH);
     } else { // ignore other pins
         
     }
@@ -224,7 +252,8 @@ void setQueryThePins() { // Q:0,0,-,0,0,-,G,-,0,0,-,0,0,V
     } else if (isBoolean(parseStr.charAt(0))) {
       response = String(response + parseStr.charAt(0));
     } else  if (parseStr.charAt(0) == QUERY_CHAR) {
-      response = String(response + digitalRead(pinMap[i]));
+//      response = String(response + digitalRead(pinMap[i]));
+      response = String(response + ((digitalRead(pinMap[i])) ? "H" : "L"));
     } else {
       Serial.println("ERROR: unknown pin type or query character");
     }
