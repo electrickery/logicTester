@@ -7,8 +7,9 @@ import time
 import re
 import json 
 
-VERSION = "1.1"
+VERSION = "1.2"
     
+ttySpeed = 115200
 ttyPort = ""
 icType = ""
 libraryName = 'icLibrary.txt'
@@ -41,10 +42,11 @@ def getDefinition(libraryName, type):
             if (line.startswith("#") or not(line.strip())):
                 continue
     #        print (line.strip())
-            pattern = "\"type\": \"" + type + "\""
+            pattern = "{\"type\": \"" + type + "\""
     #        print (" pattern:" + pattern)
             if (line.startswith(pattern)):
-                icData = json.loads("{" + line.strip() +"}")
+#                icData = json.loads("{" + line.strip() +"}")
+                icData = json.loads(line.strip())
                 print (" >>>> icData defined")
     return icData
     
@@ -60,6 +62,36 @@ def findQueryPins(config):
         pinCount += 1
     return queryPins
     
+def findExercisePins(icConf):
+    usedExercisePins = []
+    normalisedConfig = replaceChars(icConf.get("config"), "Cc")
+#    print("normalisedConfig: " + normalisedConfig)
+    allExercisePins = re.findall(r'\d+', normalisedConfig)
+    queryPins = findQueryPins(normalisedConfig)
+    for p in queryPins:
+        mutation = icConf.get('M' + str(p))
+#        print("Mutation: " + 'M' + str(p) + " " + mutation)
+        usedExercisePins += (re.findall(r'\d+', mutation))
+    uniqueList = list(set(usedExercisePins))
+    uniqueList = [int(x) for x in uniqueList]
+    uniqueList.sort()
+#    print("ExePins: " + str(uniqueList))
+    usedExercisePins = uniqueList
+    return usedExercisePins
+    
+# "C:1,2,C,4,Q,Q,G,Q,Q,10,C,12,13,V"
+def replaceChars(configStr, replaceChars):
+    pins = configStr[2:].split(',')
+#    print(str(pins))
+    pinIndex = 0
+    for rc in list(replaceChars):
+        for pin in pins:
+            if pins[pinIndex] == rc:
+                pins[pinIndex] = str(pinIndex+1)
+            pinIndex += 1
+        pinIndex = 0
+    return configStr[:2] + ",".join(pins)
+
 def int2bits(value, size):
 #    print("int2bits: " + str(value) + ", " + str(size))
     bitPattern = ""
@@ -80,15 +112,18 @@ def template2query(pattern, template, exercisePinList):
     query = template
     for bit in bitPattern:
 #        print(bit + " " + query + " " + str(bitIndex), end='')
-        query = re.sub('%' + exercisePinList[bitIndex] + '%', bit, query, 1)
+        query = re.sub('%' + str(exercisePinList[bitIndex]) + '%', bit, query, 1)
         bitIndex += 1
 #        print()
+    query = re.sub(r'%\d+%', '0', query)
     return query
     
 def query2result(query, pattern, queryPinList, icConf):
     bitPattern = pattern[::-1]
-    expectedResultTemplate = re.sub('Q:', 'R:', query)
-    exercisePinList = re.findall(r'\d+', icConf.get("config"))
+    normalisedQuery = replaceChars(query, 'Cc')
+    expectedResultTemplate = re.sub('Q:', 'R:', normalisedQuery)
+#    exercisePinList = re.findall(r'\d+', icConf.get("config"))
+    exercisePinList = findExercisePins(icConf)
     
     for qp in queryPinList:
         pinDef = icConf.get('M' + str(qp))
@@ -106,7 +141,7 @@ def query2result(query, pattern, queryPinList, icConf):
                 logicValue = 'False'
             else:
                 logicValue = 'True'    
-            pinDefMod = re.sub('%' + ep + '%', logicValue, pinDefMod)
+            pinDefMod = re.sub('%' + str(ep) + '%', logicValue, pinDefMod)
 #            print("ep/qp: "+ ep + "/" + str(qp) + "  " + bitPattern[epIndex] + "  " + pinDef + "  " + pinDefMod)
             epIndex += 1
 #        if eval(pinDefMod):
@@ -114,11 +149,11 @@ def query2result(query, pattern, queryPinList, icConf):
 #        print(" pinDefMod: " + pinDefMod + "  ", end = '')
 #        print(str(eval(pinDefMod)))
         if eval(pinDefMod):
-            expectVal = '1'
+            expectVal = 'H'
         else:
-            expectVal = '0'
+            expectVal = 'L'
         expectedResultTemplate = re.sub('-', expectVal, expectedResultTemplate, 1) # this assumes the query pins are 'in order'
-        
+        expectedResultTemplate = re.sub(r'%\d+%', "0", expectedResultTemplate)  # clean up unused exercise pins
     return expectedResultTemplate
 
 #icConf = {"type": "7402", "pins": 14, "config": "C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V", "M1": "!(2|3)",}
@@ -130,7 +165,7 @@ if len(sys.argv) > 2:
     icType = sys.argv[2]
   
 print ("I.C. tester version: " + VERSION)
-print ("ttyPort: " + ttyPort)
+print ("ttyPort: " + ttyPort + " at " + str(ttySpeed) + " Baud")
 print ("IC: " + icType)
 
 icConf = getDefinition(libraryName, icType)
@@ -139,45 +174,49 @@ if (not(icConf)):
     print("ERROR: '" + icType + "' not found in library " + libraryName)
     exit()
 
-ser = serial.Serial(ttyPort, 9600, timeout=2)  # open serial port
+ser = serial.Serial(ttyPort, ttySpeed, timeout=2)  # open serial port
 log("> " + readlnSerial(ser).strip())
 
 # Send IC configuration to Arduino
 configStr = icConf.get("config")
 log("< " + configStr)
 writeSerial(ser, configStr)
+time.sleep(arduinoWait)
 log("> " + readlnSerial(ser).strip())
 
 
 # Exercise loop init
-exercisePinList = re.findall(r'\d+', configStr)
+exercisePinList = re.findall(r'[\dCc]+', configStr[2:])
+usedExercisePinList = findExercisePins(icConf)
 exercisePinCount = len(exercisePinList)
+usedExercisePinCount = len(usedExercisePinList)
 #print("Exercising " + str(exercisePinCount) + " " + str(exercisePinList))
+
 queryPinList = findQueryPins(configStr)
 queryPinCount = len(queryPinList)
 #print("Querying " + str(queryPinCount) + " " + str(queryPinList))
+
 pinInventory = exercisePinCount + queryPinCount + 2
 if pinInventory != icConf.get("pins"):
     print ("ERROR: mismatch between specified pins: " + str(icConf.get("pins")) + " and found pins: " + str(pinInventory))
     exit(1)
 
-configStrMod = re.sub(r'(\d+)', r'%\1%', configStr)
+configStrMod = re.sub(r'(\d+)', r'%\1%', replaceChars(configStr, 'Cc'))
 queryStrTempl = re.sub(r'[Qq]', '-', configStrMod)
-queryStrTempl = re.sub('C:', 'Q:', queryStrTempl)
-#resultStrTempl = re.sub('Q:', 'R:', queryStrTempl)
+queryStrTempl = re.sub('C:', 'Q:', queryStrTempl, 1)
 #print("  c: " + configStrMod + "  q: " + queryStrTempl)
 
-exerciseCount = pow(2, exercisePinCount)
+exerciseCount = pow(2, usedExercisePinCount)
 #exerciseCount = 3
 
-#print(" exe-pins: " + str(exercisePinCount) + " , exercise count: " + str(exerciseCount))
+#print(" used exe-pins: " + str(usedExercisePinCount) + " , exercise count: " + str(exerciseCount))
 
 pinPatternValue = 0
 errorCount = 0
-# start tht loop
+# start the loop
 for value in range (exerciseCount):
-    pattern = int2bits(value, exercisePinCount)
-    queryStr = template2query(pattern, queryStrTempl, exercisePinList)
+    pattern = int2bits(value, usedExercisePinCount)
+    queryStr = template2query(pattern, queryStrTempl, usedExercisePinList)
     
     log("< " + queryStr)
     writeSerial(ser, (queryStr))
@@ -190,9 +229,9 @@ for value in range (exerciseCount):
     if (actualResult == expectedResult):
         print (str(value + 1) + "/" + str(exerciseCount) + " " + actualResult + " Ok")
     else:
+        errorCount += 1
         print("Err[" + str(errorCount) + "] '" + actualResult   + "' actual")
         print("Err[" + str(errorCount) + "] '" + expectedResult + "' expected")
-        errorCount += 1
 
 resetStr = "R"
 
@@ -206,11 +245,15 @@ if errorCount:
 else:
     print("testing " + icType + " OK.")
 
-# generate a bit pattern for all the exercise pins
-# fill the query-template with the exercise logic levels
-# fill the expected result template with exercise logic levels
-# calculate the values for the query pins
-# fill the expected result template with query logic levels
-# send the query to the Arduino
-# retrieve the response from the Arduino
-# compare the expected result with the actual result
+# find the I.C. definition in the library
+# send the config to the Arduino
+# loop through
+## generate a bit pattern for all the exercise pins
+## fill the query-template with the exercise logic levels
+## fill the expected result template with exercise logic levels
+## calculate the values for the query pins (convert to Python logic expression and evaluate)
+## fill the expected result template with query logic levels
+## send the query to the Arduino
+## retrieve the response from the Arduino
+## compare the expected result with the actual result
+# declare result and exit

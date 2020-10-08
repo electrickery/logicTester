@@ -1,0 +1,15 @@
+Fixed in version 1.2 (2020-10-08):
+
+- Ignored NC pins.
+  Each unused exercise pin doubles the number of mutations, for the 7430 the 
+  difference is 2048 : 256, a factor 8
+- Tested actual XOR function: 7486 working
+- Added more I.C.s
+- Converted config file format to full JSON
+- Fixed 16 pin mapping
+- Changed the response for query pins from 0/1 to H/L making the output more readable, 
+  very handy for debugging new boolean logic definitions
+
+
+Fixed in version 1.1 (2020-10-05):
+- Add more I.C. definitions and test them

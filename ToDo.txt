@@ -6,6 +6,7 @@ ToDo:
 - Add support for 20-pin I.C.s,
 - Add support for testing tri-state and open-collector pins,
 - Add notation and support for clock type signals and stateful I.C.s,
-- Convert config file format to full JSON.
+- Convert config file format to full JSON,
+- Add 'quick-mode' which assumes gates are isolated.
 
 Note these are optional functions, not something I am working on yet.
