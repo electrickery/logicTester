@@ -9,6 +9,7 @@ Fixed in version 1.2 (2020-10-08):
 - Fixed 16 pin mapping
 - Changed the response for query pins from 0/1 to H/L making the output more readable, 
   very handy for debugging new boolean logic definitions
+- Changed the Baud rate, as 1024 and up permutations takes quite a while.
 
 
 Fixed in version 1.1 (2020-10-05):

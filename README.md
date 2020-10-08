@@ -77,11 +77,12 @@ Example:
 * OK - response to **C:&lt;pin-spec&gt;** and **R**
 
 * **R:&lt;query_result&gt;** similar to the **Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V**
-but with output pin levels filled in.
+but with output pin levels filled in. Using "H" and "L" so the difference between
+input and output pins is still visible.
 
 Example:
  
-    R:0,0,1,1,0,0,G,0,0,1,0,0,1,V
+    R:L,0,1,1,L,0,G,0,0,H,0,0,H,V
 
 ## Process
 
