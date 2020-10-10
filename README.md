@@ -20,7 +20,18 @@ supports 14 and 16 pin I.C.s and the switch is manual.
 Only the logic behaviour is tested, not wether the I.C. conforms to TTL or CMOS 
 specifications.
 
-![Arduino Uno with cheap shield and miniature experimenter board, complete with test I.C.; a working 74LS02](firstPrototype.jpg)
+## Hardware
+
+![Arduino Uno with cheap shield and miniature experimenter board, complete with test I.C.; a working 74LS02](thirdPrototype.jpg)
+
+![power switching circuit for the 14-pin I.C. The same pin is used as signal pin in 16-pin mode.) (pin14power.png)
+
+The latest version of the prototype includes a software switch for the power pin 
+of 14-pin I.C.s. I tend to forget to switch the power pin, resulting in much
+unneeded debugging sessions. The same pin is used for a signal in 16-pin mode, 
+requiring a MosFet to remove power. The 16-pin I.C. power is still always on.
+
+The planned PCB-version will have power switching for 'all' possible power pins. 
 
 ## Configuration
 
@@ -53,6 +64,17 @@ Example:
 
 ## Message format
 
+This is the current help message from the Arduino:
+
+    ICtest 1.3
+    C - configure pins
+    D - debug mode
+    E - exercise pin with 500ms cycle
+    H - this text
+    Q - set and query pins
+    R - reset config and pins
+
+
 ### To Arduino:
 
 * **C:&lt;pin-spec&gt;** - configure the pins on the Arduino. If the pin-numbering is
@@ -84,6 +106,31 @@ Example:
  
     R:L,0,1,1,L,0,G,0,0,H,0,0,H,V
 
+### Stand alone Arduino commands
+    
+The Arduino code has some extra commands not used by the Python code, but useful
+for 'manual' debugging.
+
+* **D** - switch on and off debug mode. With debug on the Arduino becomes more 
+talkative, but this is not supported by the Python script. De arguments are 1 for 
+on and 0 for off. One character has to be between the 'D' and the number.
+
+Example:
+
+    D:1
+    
+* **E** - this generates a 500 ms square wave on one pin. The idea is to set up
+a pattern of 1's and 0's on all input pins using the **Q:** command and use **E**
+to see the response on the output pins. The default check pattern from the Python
+script isn't very intuitive for this.
+
+Example:
+
+    E:11
+    
+
+
+
 ## Process
 
 The Python script sends the config string to the Arduino, which initialises the
@@ -97,4 +144,4 @@ the script is quite chatty, so you can see what it does. Even more print's are
 commented out, very handy for debugging. The Arduino sketch cost me one day, the 
 Python script two, almost debugging each individual line with print()'s.
 
-Also see the [ToDo](ToDo.txt) for what isn't there yet.
+Also see the [ToDo](ToDo.txt) for what isn't there yet but could be.

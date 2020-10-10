@@ -7,7 +7,7 @@ import time
 import re
 import json 
 
-VERSION = "1.2"
+VERSION = "1.3"
     
 ttySpeed = 115200
 ttyPort = ""
@@ -37,7 +37,8 @@ def getDefinition(libraryName, type):
     with open(libraryName) as file: 
         for line in file:
             if (line.startswith("#version ")):
-                version = line.replace("#version ", "").strip()
+                libVersion = line.replace("#version ", "").strip()
+                print("Library version: " + libVersion);
                 continue
             if (line.startswith("#") or not(line.strip())):
                 continue

@@ -18,7 +18,7 @@
 
 #include "pinMap.h"
 
-#define DEBUG 0
+#define DEFAULT_DEBUG 0
 #define BAUDRATE 115200
 
 #define SERIALBUFSIZE         50
@@ -35,15 +35,17 @@ byte setBufPointer = 0;
 #define QUERY_CHAR      '-'
 
 #define CLOCK_PULSE     1L
+#define EXERCISE_PIN_DELAY 250
 
 byte pinType[MAX_PINCOUNT];
 byte pinCount = 0;
+byte debug = DEFAULT_DEBUG;
 
 void setup() {
-  Serial.begin(BAUDRATE);  
+  Serial.begin(BAUDRATE);
   clearPins();
   delay(10);
-  Serial.println("ICtest1.2");
+  Serial.println("ICtest1.3");
 }
 
 void loop() {
@@ -85,6 +87,17 @@ void commandInterpreter() {
     case 'c':
       configurePins();
       break;
+    case 'D':
+    case 'd':
+      if (setBufPointer > 2)
+        debug = (serialBuffer[2] == '1') ? 1 : 0;
+        Serial.print("Debug: ");
+        Serial.println(debug);
+       break;
+    case 'E':
+    case 'e':
+      exercisePin();
+      break;
     case 'H':
     case 'h':
     case '?':
@@ -107,11 +120,31 @@ void commandInterpreter() {
 }
 
 void usage() {
-  Serial.println("ICtest1.0");
+  Serial.println("ICtest1.3");
   Serial.println("C - configure pins");
+  Serial.println("D - debug mode");
+  Serial.println("E - exercise pin with 500ms cycle")
   Serial.println("H - this text");
   Serial.println("Q - set and query pins");
   Serial.println("R - reset config and pins");
+}
+
+void exercisePin() {
+  char *parseBuf = &serialBuffer[2];
+  String parseStr = parseBuf;
+  byte pinNo = str2int(parseStr);
+  if (pinNo == 0) return;
+  byte pinIndex = pinNo - 1;
+  while (Serial.available() <= 0) {
+    digitalWrite(pinMap[pinIndex], HIGH);
+    Serial.print(pinNo);
+    Serial.println(" HIGH");
+    delay(EXERCISE_PIN_DELAY);
+    digitalWrite(pinMap[pinIndex], LOW);
+    Serial.print(pinNo);
+    Serial.println(" LOW");
+    delay(EXERCISE_PIN_DELAY);
+  }
 }
 
 void configurePins() {
@@ -120,6 +153,11 @@ void configurePins() {
   clearPins();
   pinCount = getPinDef();
   bool err = 0;
+  digitalWrite(power14, HIGH);
+  pinMode(power14, OUTPUT);
+  if (pinCount == 14) {
+    digitalWrite(power14, LOW);
+  }
   for (byte i = 0; i < pinCount; i++) {
     logPinConf(i);
     if (pinType[i] == EXERCISE_PIN) {
@@ -152,7 +190,7 @@ void configurePins() {
 }
 
 void logPinConf(byte i) {
-  if (!DEBUG) return;
+  if (!debug) return;
     Serial.print("'");
     Serial.print(i + 1);
     Serial.print(" [");
@@ -264,7 +302,7 @@ void setQueryThePins() { // Q:0,0,-,0,0,-,G,-,0,0,-,0,0,V
 }
 
 void logQuery(byte i) {
-    if (!DEBUG) return;
+    if (!debug) return;
     Serial.print("'");
     Serial.print(i + 1);
     Serial.print(" [");
@@ -275,6 +313,8 @@ void logQuery(byte i) {
     } else {
       Serial.println(digitalRead(pinMap[i]));
     }
+    if (pinCount == 14)
+      Serial.println("Power to 14 pin");
 }
 
 void resetThePins() {
@@ -282,6 +322,10 @@ void resetThePins() {
   clearPins();
   for (int i = 0; i < MAX_PINCOUNT; i++) {
     pinMode(pinMap[i], INPUT);
+  }
+  if (pinCount = 14) {
+    digitalWrite(power14, HIGH);
+    pinMode(power14, INPUT);
   }
   Serial.println("OK");
 }
@@ -303,4 +347,14 @@ bool isNumeric(char c) {
 
 bool isBoolean(char c) {
   return (c >= '0' && c <= '1');
+}
+
+int str2int(String str) {
+  int i;
+  if(sscanf(str.c_str(), "%2d", &i) != 1) {
+     Serial.println("ERROR");
+     return 0;
+  }
+//  i = atoi(str.c_str());
+  return i;
 }

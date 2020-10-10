@@ -1,12 +1,12 @@
 ToDo:
 
 - Add more I.C. definitions and test them,
-- Test actual XOR function,
+
 - Add automatic switching for the power pin,
 - Add support for 20-pin I.C.s,
 - Add support for testing tri-state and open-collector pins,
 - Add notation and support for clock type signals and stateful I.C.s,
-- Convert config file format to full JSON,
-- Add 'quick-mode' which assumes gates are isolated.
+- Add 'quick-mode' which assumes gates are isolated,
+- Consider 2k2 resistors between Arduino and test-pins, reducing risks of destroying I.C.s.
 
 Note these are optional functions, not something I am working on yet.
