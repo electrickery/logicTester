@@ -24,7 +24,7 @@ specifications.
 
 ![Arduino Uno with cheap shield and miniature experimenter board, complete with test I.C.; a working N8T97N](thirdPrototype.jpg)
 
-![power switching circuit for the 14-pin I.C. The same pin is used as signal pin in 16-pin mode.) (pin14power.png)
+![power switching circuit for the 14-pin I.C. The same pin is used as signal pin in 16-pin mode.](pin14power.png)
 
 The latest version of the prototype includes a software switch for the power pin 
 of 14-pin I.C.s. I tend to forget to switch the power pin, resulting in much
