@@ -145,3 +145,5 @@ commented out, very handy for debugging. The Arduino sketch cost me one day, the
 Python script two, almost debugging each individual line with print()'s.
 
 Also see the [ToDo](ToDo.txt) for what isn't there yet but could be.
+
+There is also a <a href="https://hackaday.io/project/175252-simple-ttl-logic-tester">Hackaday page</a>.

@@ -18,6 +18,8 @@
 
 #include "pinMap.h"
 
+#define VERSION 1.3
+
 #define DEFAULT_DEBUG 0
 #define BAUDRATE 115200
 
@@ -36,6 +38,7 @@ byte setBufPointer = 0;
 
 #define CLOCK_PULSE     1L
 #define EXERCISE_PIN_DELAY 250
+#define INPUT_CHANGE_DELAY 1L
 
 byte pinType[MAX_PINCOUNT];
 byte pinCount = 0;
@@ -45,7 +48,8 @@ void setup() {
   Serial.begin(BAUDRATE);
   clearPins();
   delay(10);
-  Serial.println("ICtest1.3");
+  Serial.print("ICtest ");
+  Serial.println(VERSION,1);
 }
 
 void loop() {
@@ -111,6 +115,10 @@ void commandInterpreter() {
     case 'r':
       resetThePins();
       break;
+    case 'Z':
+    case 'z':
+      tristateTest();
+      break;
     default:
       Serial.print((char)bufByte);
       Serial.print(" ");
@@ -120,10 +128,12 @@ void commandInterpreter() {
 }
 
 void usage() {
-  Serial.println("ICtest1.3");
+  Serial.print("ICtest ");
+  Serial.println(VERSION,1);
+
   Serial.println("C - configure pins");
   Serial.println("D - debug mode");
-  Serial.println("E - exercise pin with 500ms cycle")
+  Serial.println("E - exercise pin with 500ms cycle");
   Serial.println("H - this text");
   Serial.println("Q - set and query pins");
   Serial.println("R - reset config and pins");
@@ -144,6 +154,29 @@ void exercisePin() {
     Serial.print(pinNo);
     Serial.println(" LOW");
     delay(EXERCISE_PIN_DELAY);
+  }
+}
+
+void tristateTest() {
+  char *parseBuf = &serialBuffer[2];
+  String parseStr = parseBuf;
+  byte pinNo = str2int(parseStr); 
+  byte pinIndex = pinNo - 1;
+  byte pullupValue;
+  byte noPullupValue;
+  pinMode(pinMap[pinIndex], INPUT);
+  delay(INPUT_CHANGE_DELAY);
+  noPullupValue = digitalRead(pinMap[pinIndex]);
+  pinMode(pinMap[pinIndex], INPUT_PULLUP);
+  delay(INPUT_CHANGE_DELAY);
+  pullupValue = digitalRead(pinMap[pinIndex]);
+  Serial.print("pin: ");
+  Serial.print(pinNo);
+  Serial.print(" = ");
+  if (noPullupValue == pullupValue) {
+    Serial.println((pullupValue == 0) ? "L" : "H");
+  } else {
+    Serial.println("Z");
   }
 }
 
