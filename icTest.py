@@ -160,10 +160,15 @@ def query2result(query, pattern, queryPinList, icConf):
 #icConf = {"type": "7402", "pins": 14, "config": "C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V", "M1": "!(2|3)",}
 #configStr = icConf["config"]
 
+if len(sys.argv) <= 2:
+    print("Usage " + sys.argv[0] + " <port> <device>")
+    exit(1)
 if len(sys.argv) > 1:
     ttyPort = sys.argv[1]
 if len(sys.argv) > 2:
     icType = sys.argv[2]
+
+
   
 print ("I.C. tester version: " + VERSION)
 print ("ttyPort: " + ttyPort + " at " + str(ttySpeed) + " Baud")
