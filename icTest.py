@@ -7,7 +7,7 @@ import time
 import re
 import json 
 
-VERSION = "1.3"
+VERSION = "1.4"
     
 ttySpeed = 115200
 ttyPort = ""
@@ -71,7 +71,7 @@ def findExercisePins(icConf):
     queryPins = findQueryPins(normalisedConfig)
     for p in queryPins:
         mutation = icConf.get('M' + str(p))
-#        print("Mutation: " + 'M' + str(p) + " " + mutation)
+#        print("Mutation: " + 'M' + str(p) + " " + str(mutation))
         usedExercisePins += (re.findall(r'\d+', mutation))
     uniqueList = list(set(usedExercisePins))
     uniqueList = [int(x) for x in uniqueList]
@@ -119,36 +119,38 @@ def template2query(pattern, template, exercisePinList):
     query = re.sub(r'%\d+%', '0', query)
     return query
     
+def pinDef2evalPattern(pinDefMod, ep, logicValue):
+	pinDefMod = re.sub(r'!(\d+)', r'not(\1)', pinDefMod)
+	pinDefMod = re.sub(r'(\d+)', r'%\1%', pinDefMod)
+	pinDefMod = re.sub(r'[%]+', r'%', pinDefMod)
+	pinDefMod = re.sub('!', 'not', pinDefMod)
+	pinDefMod = re.sub('not(True)', 'False', pinDefMod) # optimizers
+	pinDefMod = re.sub('not(False)', 'True', pinDefMod)
+	pinDefMod = re.sub('%' + str(ep) + '%', logicValue, pinDefMod)   
+	return pinDefMod
+	 
 def query2result(query, pattern, queryPinList, icConf):
     bitPattern = pattern[::-1]
     normalisedQuery = replaceChars(query, 'Cc')
     expectedResultTemplate = re.sub('Q:', 'R:', normalisedQuery)
 #    exercisePinList = re.findall(r'\d+', icConf.get("config"))
     exercisePinList = findExercisePins(icConf)
+#    print(exercisePinList)
     
     for qp in queryPinList:
         pinDef = icConf.get('M' + str(qp))
         pinDefMod = pinDef
         epIndex = 0
         for ep in exercisePinList:
-#            print("pinDefMod: " + pinDefMod)
-            pinDefMod = re.sub(r'!(\d+)', r'not(\1)', pinDefMod)
-            pinDefMod = re.sub(r'(\d+)', r'%\1%', pinDefMod)
-            pinDefMod = re.sub(r'[%]+', r'%', pinDefMod)
-            pinDefMod = re.sub('!', 'not', pinDefMod)
-            pinDefMod = re.sub('not(True)', 'False', pinDefMod) # optimizers
-            pinDefMod = re.sub('not(False)', 'True', pinDefMod)
             if bitPattern[epIndex] == '0':
-                logicValue = 'False'
+                 logicValue = 'False'
             else:
-                logicValue = 'True'    
-            pinDefMod = re.sub('%' + str(ep) + '%', logicValue, pinDefMod)
-#            print("ep/qp: "+ ep + "/" + str(qp) + "  " + bitPattern[epIndex] + "  " + pinDef + "  " + pinDefMod)
+               logicValue = 'True'    
+
+            pinDefMod = pinDef2evalPattern(pinDefMod, ep, logicValue)
+#            print("ep/qp: "+ str(ep) + "/" + str(qp) + "  " + bitPattern[epIndex] + "  " + pinDef + "  " + pinDefMod)
             epIndex += 1
-#        if eval(pinDefMod):
-            
-#        print(" pinDefMod: " + pinDefMod + "  ", end = '')
-#        print(str(eval(pinDefMod)))
+
         if eval(pinDefMod):
             expectVal = 'H'
         else:
@@ -156,9 +158,6 @@ def query2result(query, pattern, queryPinList, icConf):
         expectedResultTemplate = re.sub('-', expectVal, expectedResultTemplate, 1) # this assumes the query pins are 'in order'
         expectedResultTemplate = re.sub(r'%\d+%', "0", expectedResultTemplate)  # clean up unused exercise pins
     return expectedResultTemplate
-
-#icConf = {"type": "7402", "pins": 14, "config": "C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V", "M1": "!(2|3)",}
-#configStr = icConf["config"]
 
 if len(sys.argv) <= 2:
     print("Usage " + sys.argv[0] + " <port> <device>")
@@ -170,7 +169,7 @@ if len(sys.argv) > 2:
 
 
   
-print ("I.C. tester version: " + VERSION)
+print ("I.C. tester controller version: " + VERSION)
 print ("ttyPort: " + ttyPort + " at " + str(ttySpeed) + " Baud")
 print ("IC: " + icType)
 
