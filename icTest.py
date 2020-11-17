@@ -167,11 +167,14 @@ if len(sys.argv) > 1:
 if len(sys.argv) > 2:
     icType = sys.argv[2]
 
-
+resetMode = False
+if (len(sys.argv) > 3 and sys.argv[3] == "-r"):
+    resetMode = True
   
 print ("I.C. tester controller version: " + VERSION)
 print ("ttyPort: " + ttyPort + " at " + str(ttySpeed) + " Baud")
 print ("IC: " + icType)
+
 
 icConf = getDefinition(libraryName, icType)
 
@@ -181,6 +184,11 @@ if (not(icConf)):
 
 ser = serial.Serial(ttyPort, ttySpeed, timeout=2)  # open serial port
 log("> " + readlnSerial(ser).strip())
+
+if (resetMode):
+    writeSerial(ser, 'R')
+    exit()
+
 
 # Send IC configuration to Arduino
 configStr = icConf.get("config")
