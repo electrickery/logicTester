@@ -30,7 +30,6 @@ The Arduino Mega 2560 shield version has automatic power switching for pin 14, 1
 
 More info (schema and PCB details) on the Hackaday.io page.
 
-
 ### Mega 2560 shield
 
 <a href="schemav1.4.pdf">The schema of the test version</a>. This version allows for wide and narrow I.C.s, up to
@@ -61,8 +60,8 @@ The script is started with ***python3 &lt;port&gt; &lt;chip&gt;***
 
 ***port*** the the serial port, Baud rate is 9600 Bd.
 
-***chip*** is the chip to test. Currently only the 74(LS)00 and 74(LS)02 are
-completely implemented.
+***chip*** is the chip to test. Currently about 40 TTL I.C.s are
+completely implemented and tested. See the icLibrary.txt file for details.
 
 Example:
 
