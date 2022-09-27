@@ -37,16 +37,13 @@ def loadDefinitions(libraryName):
     icDataStr = ""
     with open(libraryName) as file: 
         for line in file:
-            if (line.startswith("#version ")):
-                libVersion = line.replace("#version ", "").strip()
-                print("Library version: " + libVersion);
-                continue
             if (line.startswith("#") or not(line.strip())):
                 continue
             icDataStr += line.strip().replace("\n", "").replace("\r", "")
 #    print (icDataStr)
     icData = json.loads(icDataStr)
-    print (" >>>> icLibrary loaded")
+    vers = icData["version"]
+    print (" >>>> icLibrary loaded version: " + vers)
     return icData
     
     
