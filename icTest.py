@@ -7,12 +7,12 @@ import time
 import re
 import json 
 
-VERSION = "1.4"
+VERSION = "1.5"
     
 ttySpeed = 115200
 ttyPort = ""
 icType = ""
-libraryName = 'icLibrary.txt'
+libraryName = 'icLibrary3.txt'
 
 arduinoWait = 2
 DEBUG = False
@@ -32,8 +32,9 @@ def countMutations(confString):
     count = 0
     return [int(s) for s in str.split(confString) if s.isdigit()]
 
-def getDefinition(libraryName, type):
+def loadDefinitions(libraryName):
     icData = ""
+    icDataStr = ""
     with open(libraryName) as file: 
         for line in file:
             if (line.startswith("#version ")):
@@ -42,15 +43,28 @@ def getDefinition(libraryName, type):
                 continue
             if (line.startswith("#") or not(line.strip())):
                 continue
-    #        print (line.strip())
-            pattern = "{\"type\": \"" + type + "\""
-    #        print (" pattern:" + pattern)
-            if (line.startswith(pattern)):
-#                icData = json.loads("{" + line.strip() +"}")
-                icData = json.loads(line.strip())
-                print (" >>>> icData defined")
+            icDataStr += line.strip().replace("\n", "").replace("\r", "")
+#    print (icDataStr)
+    icData = json.loads(icDataStr)
+    print (" >>>> icLibrary loaded")
     return icData
     
+    
+def getDefinition(lib, type):
+    value = ""
+    for dev in lib["devices"]:
+#        print("The dev is: ", dev)
+        devDef = dev["device"]
+        devType = devDef["type"]
+#        print("dev: " , devDef, "  type: ", devType)
+
+        if (devType == type):
+            value = str(devDef)
+            print (" >>>> icData found")
+            break
+
+    return value
+        
 def findQueryPins(config):
     pinDefs = config[2:]
     queryPins = []
@@ -176,11 +190,16 @@ print ("ttyPort: " + ttyPort + " at " + str(ttySpeed) + " Baud")
 print ("IC: " + icType)
 
 
-icConf = getDefinition(libraryName, icType)
+icLib = loadDefinitions(libraryName)
+icConfStr = getDefinition(icLib, icType)
 
-if (not(icConf)):
+if (not(icConfStr)):
     print("ERROR: '" + icType + "' not found in library " + libraryName)
     exit()
+else:
+    print("device definition: '" + icConfStr + "'")
+
+icConf = json.loads(icConfStr.replace('\'', '"'))
 
 ser = serial.Serial(ttyPort, ttySpeed, timeout=2)  # open serial port
 log("> " + readlnSerial(ser).strip())
@@ -188,7 +207,6 @@ log("> " + readlnSerial(ser).strip())
 if (resetMode):
     writeSerial(ser, 'R')
     exit()
-
 
 # Send IC configuration to Arduino
 configStr = icConf.get("config")
