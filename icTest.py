@@ -57,7 +57,7 @@ def getDefinition(lib, type):
 
         if (devType == type):
             value = str(devDef)
-            print (" >>>> icData found")
+            print (" >>>> icData found for " + type)
             break
 
     return value
