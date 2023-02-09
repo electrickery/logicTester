@@ -71,16 +71,16 @@ Example:
 
 This is the current help message from the Arduino:
 
-    ICtest 1.3
+    ICtest 1.4
     C - configure pins
     D - debug mode
     E - exercise pin with 500ms cycle
     H - this text
     Q - set and query pins
     R - reset config and pins
+    Z - test for tri-state output
 
-
-### To Arduino:
+Messages to and from Arduino:
 
 * **C:&lt;pin-spec&gt;** - configure the pins on the Arduino. If the pin-numbering is
 supported the response is "**OK**". If not the response is "**ERROR**".
@@ -88,6 +88,10 @@ supported the response is "**OK**". If not the response is "**ERROR**".
 Example:
 
     C:Q,2,3,Q,5,6,G,8,9,Q,11,12,Q,V
+    
+Response example:
+
+    OK
 
 * **Q:&lt;set-and-query&gt;** - specifies the values for the I.C. input pins. The
 response is modified copy;the first char is '**R**' and the I.C. output pin values
@@ -96,20 +100,23 @@ are filled in.
 Example:
 
     Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V
-
-* **R** - reset all pins to tri-state and erase configuration.
-
-### From Arduino:
-
-* OK - response to **C:&lt;pin-spec&gt;** and **R**
-
-* **R:&lt;query_result&gt;** similar to the **Q:-,1,0,-,0,0,G,0,0,-,0,0,-,V**
+    
+Response example
+    
+    R:L,0,1,1,L,0,G,0,0,H,0,0,H,V
+    
+The response is similar to the sent message
 but with output pin levels filled in. Using "H" and "L" so the difference between
 input and output pins is still visible.
 
-Example:
+* **R** - reset all pins to tri-state and erase configuration.
 
-    R:L,0,1,1,L,0,G,0,0,H,0,0,H,V
+Response example:
+
+    OK
+
+### From Arduino:
+
 
 ### Stand alone Arduino commands
   
