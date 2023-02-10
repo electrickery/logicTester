@@ -12,7 +12,7 @@ VERSION = "1.5"
 ttySpeed = 115200
 ttyPort = ""
 icType = ""
-libraryName = 'icLibrary3.txt'
+libraryName = 'icLibrary4.txt'
 
 arduinoWait = 2
 DEBUG = False
@@ -170,6 +170,20 @@ def query2result(query, pattern, queryPinList, icConf):
         expectedResultTemplate = re.sub(r'%\d+%', "0", expectedResultTemplate)  # clean up unused exercise pins
     return expectedResultTemplate
 
+
+# https://stackoverflow.com/questions/34327719/get-keys-from-json-in-python
+def get_simple_keys(data):
+    result = []
+    for key in data.keys():
+        if type(data[key]) != dict:
+            result.append(key)
+        else:
+            result += get_simple_keys(data[key])
+    return result
+    
+########################################################################
+
+
 if len(sys.argv) <= 2:
     print("Usage " + sys.argv[0] + " <port> <device>")
     exit(1)
@@ -207,71 +221,93 @@ if (resetMode):
 
 # Send IC configuration to Arduino
 configStr = icConf.get("config")
-log("< " + configStr)
-writeSerial(ser, configStr)
-time.sleep(arduinoWait)
-log("> " + readlnSerial(ser).strip())
+if (configStr):
+        log("< " + configStr)
+        writeSerial(ser, configStr)
+        time.sleep(arduinoWait)
+        log("> " + readlnSerial(ser).strip())
 
 
-# Exercise loop init
-exercisePinList = re.findall(r'[\dCc]+', configStr[2:])
-usedExercisePinList = findExercisePins(icConf)
-exercisePinCount = len(exercisePinList)
-usedExercisePinCount = len(usedExercisePinList)
-#print("Exercising " + str(exercisePinCount) + " " + str(exercisePinList))
+        # Exercise loop init
+        exercisePinList = re.findall(r'[\dCc]+', configStr[2:])
+        usedExercisePinList = findExercisePins(icConf)
+        exercisePinCount = len(exercisePinList)
+        usedExercisePinCount = len(usedExercisePinList)
+        #print("Exercising " + str(exercisePinCount) + " " + str(exercisePinList))
 
-queryPinList = findQueryPins(configStr)
-queryPinCount = len(queryPinList)
-#print("Querying " + str(queryPinCount) + " " + str(queryPinList))
+        queryPinList = findQueryPins(configStr)
+        queryPinCount = len(queryPinList)
+        #print("Querying " + str(queryPinCount) + " " + str(queryPinList))
 
-pinInventory = exercisePinCount + queryPinCount + 2
-if pinInventory != icConf.get("pins"):
-    print ("ERROR: mismatch between specified pins: " + str(icConf.get("pins")) + " and found pins: " + str(pinInventory))
-    exit(1)
+        pinInventory = exercisePinCount + queryPinCount + 2
+        if pinInventory != icConf.get("pins"):
+            print ("ERROR: mismatch between specified pins: " + str(icConf.get("pins")) + " and found pins: " + str(pinInventory))
+            exit(1)
 
-configStrMod = re.sub(r'(\d+)', r'%\1%', replaceChars(configStr, 'Cc'))
-queryStrTempl = re.sub(r'[Qq]', '-', configStrMod)
-queryStrTempl = re.sub('C:', 'Q:', queryStrTempl, 1)
-#print("  c: " + configStrMod + "  q: " + queryStrTempl)
+        configStrMod = re.sub(r'(\d+)', r'%\1%', replaceChars(configStr, 'Cc'))
+        queryStrTempl = re.sub(r'[Qq]', '-', configStrMod)
+        queryStrTempl = re.sub('C:', 'Q:', queryStrTempl, 1)
+        #print("  c: " + configStrMod + "  q: " + queryStrTempl)
 
-exerciseCount = pow(2, usedExercisePinCount)
-#exerciseCount = 3
+        exerciseCount = pow(2, usedExercisePinCount)
+        #exerciseCount = 3
 
-#print(" used exe-pins: " + str(usedExercisePinCount) + " , exercise count: " + str(exerciseCount))
+        #print(" used exe-pins: " + str(usedExercisePinCount) + " , exercise count: " + str(exerciseCount))
 
-pinPatternValue = 0
-errorCount = 0
-# start the loop
-for value in range (exerciseCount):
-    pattern = int2bits(value, usedExercisePinCount)
-    queryStr = template2query(pattern, queryStrTempl, usedExercisePinList)
-    
-    log("< " + queryStr)
-    writeSerial(ser, (queryStr))
+        pinPatternValue = 0
+        errorCount = 0
+        # start the loop
+        for value in range (exerciseCount):
+            pattern = int2bits(value, usedExercisePinCount)
+            queryStr = template2query(pattern, queryStrTempl, usedExercisePinList)
+            
+            log("< " + queryStr)
+            writeSerial(ser, (queryStr))
 
-    actualResult   = readlnSerial(ser).strip()
-    expectedResult = query2result(queryStr, pattern, queryPinList, icConf)
+            actualResult   = readlnSerial(ser).strip()
+            expectedResult = query2result(queryStr, pattern, queryPinList, icConf)
 
-    log("> " + actualResult)
+            log("> " + actualResult)
 
-    if (actualResult == expectedResult):
-        print (str(value + 1) + "/" + str(exerciseCount) + " " + actualResult + " Ok")
-    else:
-        errorCount += 1
-        print("Err[" + str(errorCount) + "] '" + actualResult   + "' actual")
-        print("Err[" + str(errorCount) + "] '" + expectedResult + "' expected")
+            if (actualResult == expectedResult):
+                print (str(value + 1) + "/" + str(exerciseCount) + " " + actualResult + " Ok")
+            else:
+                errorCount += 1
+                print("Err[" + str(errorCount) + "] '" + actualResult   + "' actual")
+                print("Err[" + str(errorCount) + "] '" + expectedResult + "' expected")
 
-resetStr = "R"
+        resetStr = "R"
 
-log("< " + resetStr)
-writeSerial(ser, resetStr)
+        log("< " + resetStr)
+        writeSerial(ser, resetStr)
 
-log("> " + readlnSerial(ser).strip())
+        log("> " + readlnSerial(ser).strip())
 
-if errorCount:
-    print("testing " + icType + "; " + str(errorCount) + " errors")
 else:
-    print("testing " + icType + " OK.")
+        errorCount = 0
+        print("Imperative format detected")
+        keys = get_simple_keys(icConf)
+        for rawCmd in keys:
+            expectedResult = str(icConf.get(rawCmd))
+            chkCmd = re.sub("\d+_", "", rawCmd)
+            if not(chkCmd.startswith('C:') or chkCmd.startswith('Q:')):
+                continue
+            splitCmd  = re.split("_", rawCmd, 1)
+            cmd = splitCmd[1]
+            prefix = splitCmd[0]
+            print(prefix + "_" + cmd + "   " + expectedResult)
+            writeSerial(ser, cmd)
+            actualResult   = readlnSerial(ser).strip()
+            if expectedResult != actualResult:
+                errorCount += 1
+                print("Err[" + str(errorCount) + "] '" + actualResult   + "' actual")
+                print("Err[" + str(errorCount) + "] '" + expectedResult + "' expected")
+                
+        if errorCount:
+            print("testing " + icType + "; " + str(errorCount) + " errors")
+        else:
+            print("testing " + icType + " OK.")
+
 
 # find the I.C. definition in the library
 # send the config to the Arduino
