@@ -12,10 +12,17 @@ and compare functionality build in Python. The Python script does contain the I.
 data, this is read from a text-based configuration file. As long as the behaviour
 at the output pins can be defined in Boolean logic, the chip can be tested.
 
-The current version is limited to stateless gates and inverters. So far I didn't
-try to define a machine-parsable notation for I.C.s with clocked or register
-functionality. A limitation of the Arduino sketch is that it currently only
-supports 14 and 16 pin I.C.s and the switch is manual.
+The current version 1.5 is expanded with a new chip-test format, which allows
+defining each change at the chip pins to be defined. It uses the same communication
+protocol to the Arduino sketch, making the change Python and library only.
+
+The old protocol used boolean logic definition to generate each possible
+permutation of the input pins with the expected result. The new format requires
+each state or state change to be explicitly defined in the library file.
+This is much more flexible, as it even allows on-the fly-change of pins from
+input to output or vice-versa (like 74LS245). The backdraw is tedious coding of 
+states in a text file. The tool can be used interactive, helping in catching typo's
+in the definition.
 
 Only the logic behaviour is tested, not wether the I.C. conforms to TTL or CMOS
 specifications.
@@ -139,8 +146,21 @@ script isn't very intuitive for this.
 Example:
 
     E:11
-  
 
+### New format description
+
+The new definition format lacks the "config" key, this also the distinction 
+for the python script. Apart of the "type" key, used to find the definition
+and the "pins" key (mostly decorative here), all lines are close to the actual 
+commands send to the Arduino. The keys however have a numeric prefix, terminated
+with a "_", only to make them unique (the JSON is converted to a Python dict
+which requires unique keys). The numeric string doesn't have to be in 
+incrementing order but this make the uniqueness easy to check. The prefix is 
+removed in the string send to the Arduino, but kept for the error messages.
+
+The new format is usually much faster, as usually only the essential 
+patterns are encoded. The old format generates (and checkes) just every
+possible pattern.
 
 
 ## Process
