@@ -65,9 +65,9 @@ The Python script is written with Python 3.6.9 on Linux Xubuntu 18.04.
 
 The script is started with ***python3 &lt;port&gt; &lt;chip&gt;***
 
-***port*** the the serial port, Baud rate is 9600 Bd.
+***port*** the the serial port, Baud rate is 115200 Bd.
 
-***chip*** is the chip to test. Currently about 40 TTL I.C.s are
+***chip*** is the chip to test. Currently about 55 TTL I.C.s are
 completely implemented and tested. See the icLibrary.txt file for details.
 
 Example:
@@ -78,7 +78,7 @@ Example:
 
 This is the current help message from the Arduino:
 
-    ICtest 1.4
+    ICtest 1.5
     C - configure pins
     D - debug mode
     E - exercise pin with 500ms cycle
