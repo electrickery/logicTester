@@ -12,7 +12,7 @@ VERSION = "1.5"
 ttySpeed = 115200
 ttyPort = ""
 icType = ""
-libraryName = 'icLibrary4.txt'
+libraryName = 'icLibrary.txt'
 
 arduinoWait = 2
 DEBUG = False
