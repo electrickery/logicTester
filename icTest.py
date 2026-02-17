@@ -282,6 +282,10 @@ if (configStr):
         writeSerial(ser, resetStr)
 
         log("> " + readlnSerial(ser).strip())
+        if errorCount:
+            print("testing " + icType + "; " + str(errorCount) + " errors")
+        else:
+            print("testing " + icType + " OK.")
 
 else:
         errorCount = 0
