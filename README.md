@@ -1,3 +1,5 @@
+**Moved repository to https://codeberg.org/electrickery/logicTester**
+
 # logicTester
 
 This is a POC (proof-of-concept) of a simple but configurable 'SSI'-logic I.C-tester.
